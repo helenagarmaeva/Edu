@@ -7,7 +7,10 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "playwright test"
+    "test": "npm run tokens:check && playwright test",
+    "tokens": "node scripts/build-tokens.mjs",
+    "tokens:check": "node scripts/build-tokens.mjs --check",
+    "prebuild": "npm run tokens:check"
   },
   "dependencies": {
     "@fontsource/manrope": "^5.2.0",

@@ -4,7 +4,67 @@ import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
+import "./design-system/figma.tokens.css";
+import "./design-system/typography.tokens.css";
+import "./design-system/components.css";
+import "./design-system/measured.tokens.css";
 import "./style.css";
+import {
+  Icon,
+  Button,
+  Surface,
+  TextField,
+  SelectRow,
+  ScreenFrame,
+  DateTimeRow,
+  TabBar,
+} from "./design-system/components.jsx";
+import layout from "./design-system/layout.json";
+
+import { DesignSystem } from "./design-system/DesignSystem.jsx";
+const frame = new URLSearchParams(location.search).get("frame");
+const preview = ["1", "2", "2.1", "3", "3.1", "4", "4.1"].includes(frame);
+const previewPets = ["p1", "p2", "p3"].map((id) => ({
+  id,
+  name: "Name",
+  photo: "",
+  weight: "",
+  age: "",
+  type: "Собака",
+  sex: "Мужской",
+  docs: [],
+}));
+const previewEvents = Array.from({ length: 4 }, (_, i) => ({
+  id: "e" + i,
+  petId: "p1",
+  title: "Title",
+  date: "2027-09-28",
+  time: "12:00",
+}));
+const previewDraft = {
+  name: frame?.startsWith("3") ? "Name" : "",
+  type: "Собака",
+  sex: "Мужской",
+  breed: "",
+  weight: "",
+  age: "",
+  chip: "",
+  photo: "",
+  docs:
+    frame === "2.1"
+      ? [
+          { name: "УЗИ", size: 24500000, url: "#" },
+          { name: "МРТ", size: 32600000, url: "#" },
+        ]
+      : [],
+  schedules: Array.from({ length: frame === "3.1" ? 4 : 3 }, () => ({
+    title: "",
+    date: "2026-10-26",
+    time: "12:00",
+    repeat: "Раз в месяц",
+    reminder: "За 15 минут",
+  })),
+};
 const read = (key, fallback) => {
   try {
     return JSON.parse(localStorage.getItem(key)) ?? fallback;
@@ -12,13 +72,6 @@ const read = (key, fallback) => {
     return fallback;
   }
 };
-const Icon = ({ name, className = "" }) => (
-  <img
-    className={"figma-icon " + className}
-    src={`./figma/${name}.svg`}
-    alt=""
-  />
-);
 const Plus = () => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
@@ -29,33 +82,32 @@ const Plus = () => (
     />
   </svg>
 );
-const Down = () => (
-  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path
-      d="m3 6 5 5 5-5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 function App() {
-  const [pets, setPets] = useState(() => read("pets", [])),
-    [events, setEvents] = useState(() => read("events", [])),
-    [owner, setOwner] = useState(() => read("owner", "Елена"));
-  const [screen, setScreen] = useState("home"),
+  const [pets, setPets] = useState(() =>
+      preview ? (frame.startsWith("4") ? previewPets : []) : read("pets", []),
+    ),
+    [events, setEvents] = useState(() =>
+      preview ? previewEvents : read("events", []),
+    ),
+    [owner, setOwner] = useState(() =>
+      preview ? "Елена" : read("owner", "Елена"),
+    );
+  const [screen, setScreen] = useState(
+      preview && !["1", "4", "4.1"].includes(frame) ? "pet" : "home",
+    ),
     [tab, setTab] = useState("Главная"),
     [selected, setSelected] = useState(0),
-    [draft, setDraft] = useState({}),
-    [step, setStep] = useState(1),
-    [menu, setMenu] = useState(false),
+    [draft, setDraft] = useState(preview ? previewDraft : {}),
+    [step, setStep] = useState(frame?.startsWith("3") ? 2 : 1),
+    [menu, setMenu] = useState(frame === "4.1"),
     [message, setMessage] = useState(""),
     [scale, setScale] = useState(1);
+  const [scrolled, setScrolled] = useState(false);
   const [month, setMonth] = useState(new Date()),
     [day, setDay] = useState(new Date().getDate());
   useLayoutEffect(() => {
-    const update = () => setScale(Math.min(1, window.innerWidth / 402));
+    const update = () =>
+      setScale(Math.min(1, window.innerWidth / layout.screen.width));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -67,7 +119,7 @@ function App() {
   }
   function store(key, value, set) {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      if (!preview) localStorage.setItem(key, JSON.stringify(value));
       set(value);
       return true;
     } catch {
@@ -196,10 +248,8 @@ function App() {
   }
   function input(label, key, type = "text") {
     return (
-      <input
-        className="pill-input"
-        aria-label={label}
-        placeholder={label}
+      <TextField
+        label={label}
         type={type}
         min={type === "number" ? 0 : undefined}
         step={type === "number" ? "0.1" : undefined}
@@ -212,7 +262,7 @@ function App() {
   const docs = (
     <>
       {!!draft.docs?.length && (
-        <div className="doc-card">
+        <Surface className="doc-card">
           {draft.docs.map((d, i) => (
             <div className="doc-row" key={i}>
               <Icon name="pdf" className="pdf-original" />
@@ -248,7 +298,7 @@ function App() {
               </button>
             </div>
           ))}
-        </div>
+        </Surface>
       )}
       <div className="doc-upload">
         <label>
@@ -266,52 +316,38 @@ function App() {
   );
   function selectRow(label, value, onChange, options) {
     return (
-      <label className="select-row">
-        <span>{label}</span>
-        <select
-          value={value}
-          aria-label={label}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {options.map((o) => (
-            <option key={o}>{o}</option>
-          ))}
-        </select>
-        <Down />
-      </label>
+      <SelectRow
+        label={label}
+        value={value}
+        onChange={onChange}
+        options={options}
+      />
     );
   }
   function scheduleCard(value, onChange, index = 0) {
     return (
-      <div className="schedule-card" key={index}>
+      <Surface className="schedule-card" key={index}>
         <input
           aria-label={`Название${index ? " " + (index + 1) : ""}`}
           placeholder="Название"
+          required={screen !== "pet"}
           value={value.title}
           onChange={(e) => onChange({ ...value, title: e.target.value })}
         />
-        <label className="select-row">
-          <span>Дата</span>
-          <input
-            aria-label={`Дата${index ? " " + (index + 1) : ""}`}
-            type="date"
-            required
-            value={value.date}
-            onChange={(e) => onChange({ ...value, date: e.target.value })}
-          />
-          <Down />
-        </label>
-        <label className="select-row">
-          <span>Время</span>
-          <input
-            aria-label={`Время${index ? " " + (index + 1) : ""}`}
-            type="time"
-            required
-            value={value.time}
-            onChange={(e) => onChange({ ...value, time: e.target.value })}
-          />
-          <Down />
-        </label>
+        <DateTimeRow
+          label="Дата"
+          ariaLabel={`Дата${index ? " " + (index + 1) : ""}`}
+          type="date"
+          value={value.date}
+          onChange={(date) => onChange({ ...value, date })}
+        />
+        <DateTimeRow
+          label="Время"
+          ariaLabel={`Время${index ? " " + (index + 1) : ""}`}
+          type="time"
+          value={value.time}
+          onChange={(time) => onChange({ ...value, time })}
+        />
         {selectRow(
           "Повтор",
           value.repeat,
@@ -324,7 +360,7 @@ function App() {
           (v) => onChange({ ...value, reminder: v }),
           ["За 15 минут", "За 1 час", "За 1 день", "Без напоминания"],
         )}
-      </div>
+      </Surface>
     );
   }
   const heading = (
@@ -350,14 +386,28 @@ function App() {
   );
   const eventItems = (items, empty = true) =>
     items.length ? (
-      items.map((ev) => (
-        <article className="event-item" key={ev.id}>
+      items.map((ev, index) => (
+        <article
+          className={
+            "event-item " +
+            ((
+              preview
+                ? items.length > 1 && index === 2
+                : index > 0 && items[index - 1].date === ev.date
+            )
+              ? "continuation"
+              : "")
+          }
+          key={ev.id}
+        >
           <div className="event-date">
-            {new Date(ev.date + "T12:00").toLocaleDateString("ru-RU", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
+            {new Date(ev.date + "T12:00")
+              .toLocaleDateString("ru-RU", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })
+              .replace(/\s?г\.$/, "")}
           </div>
           <button
             onClick={() => {
@@ -373,8 +423,10 @@ function App() {
                   "Name"}
               </small>
             </span>
-            <b>{ev.time}</b>
-            <span className="chevron">›</span>
+            <div className="event-time">
+              <b>{ev.time}</b>
+              <Icon name="event-chevron" className="chevron" />
+            </div>
           </button>
         </article>
       ))
@@ -384,11 +436,26 @@ function App() {
   const dashboard = (
     <>
       <div className="hero">
-        <img
-          className="hero-photo"
-          src={pet?.photo || "./images/dog-2.jpg"}
-          alt={pet?.name || "Питомец"}
-        />
+        {pet?.photo ? (
+          <img
+            className="hero-photo custom-photo"
+            src={pet.photo}
+            alt={pet.name}
+          />
+        ) : (
+          <>
+            <img
+              className="hero-photo-background"
+              src="./images/dog-1.jpg"
+              alt=""
+            />
+            <img
+              className="hero-photo figma-photo"
+              src="./images/dog-2.jpg"
+              alt={pet?.name || "Питомец"}
+            />
+          </>
+        )}
         <div className="hero-info">
           <div className="hero-title">
             <h2>{pet?.name || "Name"}</h2>
@@ -429,76 +496,40 @@ function App() {
         ))}
       </div>
       <div className="home-events">
-        {events.filter((e) => e.petId === pet?.id).length > 0 && (
-          <div className="highlight-event">
-            {eventItems(events.filter((e) => e.petId === pet?.id).slice(0, 1))}
-          </div>
-        )}
-        <section className="upcoming">
+        <Surface className="highlight-event">
+          {eventItems(events.filter((e) => e.petId === pet?.id).slice(0, 1))}
+        </Surface>
+        <Surface as="section" className="upcoming">
           <h2>Ближайшие события</h2>
           {eventItems(events.filter((e) => e.petId === pet?.id))}
-        </section>
+        </Surface>
       </div>
     </>
   );
   const nav = (
-    <>
-      <nav className="tab-bar">
-        <div className="nav-shape" />
-        <button
-          className="nav-plus"
-          aria-label="Добавить"
-          aria-expanded={menu}
-          onClick={() => setMenu(!menu)}
-        >
-          {menu ? <span>×</span> : <Plus />}
-        </button>
-        <div className="nav-buttons">
-          {[
-            ["Главная", "home"],
-            ["Календарь", "calendar"],
-            ["Питомцы", "pets"],
-            ["Профиль", "profile"],
-          ].map(([label, icon]) => (
-            <button
-              key={label}
-              className={tab === label ? "active" : ""}
-              onClick={() => {
-                setTab(label);
-                setMenu(false);
-              }}
-            >
-              <Icon name={icon} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-      {menu && (
-        <div className="plus-menu">
-          {[
-            ["Питомец", "pets", () => editPet()],
-            ["Событие", "calendar", addEvent],
-            [
-              "Документ",
-              "pdf",
-              () => {
-                editPet(pet);
-                setTimeout(
-                  () => document.querySelector(".doc-upload input")?.click(),
-                  0,
-                );
-              },
-            ],
-          ].map(([label, icon, action]) => (
-            <button onClick={action} key={label}>
-              <Icon name={icon === "pdf" ? "calendar" : icon} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </>
+    <TabBar
+      active={tab}
+      menuOpen={menu}
+      onToggle={() => setMenu(!menu)}
+      onNavigate={(label) => {
+        setTab(label);
+        setMenu(false);
+      }}
+      actions={[
+        { label: "Питомец", onClick: () => editPet() },
+        { label: "Событие", onClick: addEvent },
+        {
+          label: "Документ",
+          onClick: () => {
+            editPet(pet);
+            setTimeout(
+              () => document.querySelector(".doc-upload input")?.click(),
+              0,
+            );
+          },
+        },
+      ]}
+    />
   );
   const calendar = (
     <>
@@ -517,10 +548,12 @@ function App() {
             ‹
           </button>
           <h2>
-            {month.toLocaleDateString("ru-RU", {
-              month: "long",
-              year: "numeric",
-            })}
+            {month
+              .toLocaleDateString("ru-RU", {
+                month: "long",
+                year: "numeric",
+              })
+              .replace(/\s?г\.$/, "")}
           </h2>
           <button
             aria-label="Следующий месяц"
@@ -579,260 +612,260 @@ function App() {
     </>
   );
   return (
-    <div
-      className="viewport"
-      style={{ width: 402 * scale, height: 874 * scale }}
+    <ScreenFrame
+      scale={scale}
+      className={
+        (screen === "home" && tab === "Главная" && pets.length
+          ? "with-pet"
+          : "") + (scrolled ? " is-scrolled" : "")
+      }
     >
-      <div
-        className={
-          "app " +
-          (screen === "home" && tab === "Главная" && pets.length
-            ? "with-pet"
-            : "")
-        }
-        style={{ transform: `scale(${scale})` }}
-      >
-        <Icon className="status-bar" name="status" />
-        {screen === "home" ? (
-          <>
-            {tab === "Главная" ? (
-              <>
-                <div className="home-scroll">
-                  {pets.length ? (
-                    dashboard
-                  ) : (
-                    <div className="empty">
-                      <h2>Нет питомцев</h2>
-                      <p>Чтобы начать добавь питомца</p>
-                    </div>
-                  )}
-                </div>
-                {heading}
-                {!pets.length && (
-                  <div className="action">
-                    <button className="primary" onClick={() => editPet()}>
-                      Добавить питомца
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="secondary-scroll">
-                {tab === "Календарь" ? (
-                  calendar
-                ) : (
-                  <>
-                    <div className="secondary-heading">
-                      <h1>{tab}</h1>
-                    </div>
-                    {tab === "Профиль" && (
-                      <div className="profile-card">
-                        <Icon name="profile" />
-                        <label>
-                          Имя
-                          <input
-                            aria-label="Имя"
-                            value={owner}
-                            onChange={(e) =>
-                              store("owner", e.target.value, setOwner)
-                            }
-                          />
-                        </label>
-                      </div>
-                    )}
-                    <div className="pet-list">
-                      {pets.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => {
-                            setSelected(p.id);
-                            setTab("Главная");
-                          }}
-                        >
-                          <img src={p.photo || "./images/dog-2.jpg"} alt="" />
-                          <span>{p.name}</span>
-                          <span>›</span>
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      className="add-pet secondary"
-                      onClick={() => editPet()}
-                    >
-                      <Plus />
-                      Добавить питомца
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-            {(pets.length > 0 || tab !== "Главная") && nav}
-          </>
-        ) : (
-          <>
-            <header className="form-header">
-              <button
-                aria-label="Назад"
-                onClick={() =>
-                  screen === "pet" && step === 2
-                    ? setStep(1)
-                    : setScreen("home")
+      <Icon className="status-bar" name="status" />
+      {screen === "home" ? (
+        <>
+          {tab === "Главная" ? (
+            <>
+              <div
+                className="home-scroll"
+                onScroll={(e) =>
+                  setScrolled(
+                    e.currentTarget.scrollTop >
+                      layout.hero.height - layout.form.top,
+                  )
                 }
               >
-                <Icon name="back" />
-              </button>
-              <h1>Основная информация</h1>
-            </header>
-            <form
-              id="details"
-              onSubmit={
-                screen === "pet" ? (step === 1 ? proceed : savePet) : saveEvent
-              }
-            >
-              <div className="form-scroll">
-                {screen === "pet" && step === 1 ? (
-                  <>
-                    <label className="photo-picker">
-                      {draft.photo ? (
-                        <img src={draft.photo} alt="Фото питомца" />
-                      ) : (
-                        <Icon name="camera" />
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={uploadPhoto}
-                      />
-                      <span className="sr-only">Добавить фото</span>
-                    </label>
-                    <div className="pet-fields">
-                      {input("Имя питомца", "name")}
-                      <div className="select-card">
-                        {selectRow(
-                          "Тип",
-                          draft.type,
-                          (v) => setDraft({ ...draft, type: v }),
-                          ["Собака", "Кошка", "Другое"],
-                        )}
-                        {selectRow(
-                          "Пол",
-                          draft.sex,
-                          (v) => setDraft({ ...draft, sex: v }),
-                          ["Мужской", "Женский"],
-                        )}
-                      </div>
-                      {input("Порода", "breed")}
-                      <div className="split">
-                        {input("Возраст", "age")}
-                        {input("Вес", "weight", "number")}
-                      </div>
-                      {input("Номер чипа", "chip")}
-                      {docs}
-                    </div>
-                    {draft.id && (
-                      <button
-                        className="delete-pet"
-                        type="button"
-                        onClick={() => {
-                          if (confirm("Удалить питомца и его события?")) {
-                            if (
-                              !store(
-                                "pets",
-                                pets.filter((p) => p.id !== draft.id),
-                                setPets,
-                              )
-                            )
-                              return;
-                            store(
-                              "events",
-                              events.filter((e) => e.petId !== draft.id),
-                              setEvents,
-                            );
-                            setScreen("home");
+                {pets.length ? (
+                  dashboard
+                ) : (
+                  <div className="empty">
+                    <h2>Нет питомцев</h2>
+                    <p>Чтобы начать добавь питомца</p>
+                  </div>
+                )}
+              </div>
+              {heading}
+              {!pets.length && (
+                <div className="action">
+                  <Button onClick={() => editPet()}>Добавить питомца</Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="secondary-scroll">
+              {tab === "Календарь" ? (
+                calendar
+              ) : (
+                <>
+                  <div className="secondary-heading">
+                    <h1>{tab}</h1>
+                  </div>
+                  {tab === "Профиль" && (
+                    <div className="profile-card">
+                      <Icon name="profile" />
+                      <label>
+                        Имя
+                        <input
+                          aria-label="Имя"
+                          value={owner}
+                          onChange={(e) =>
+                            store("owner", e.target.value, setOwner)
                           }
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <div className="pet-list">
+                    {pets.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setSelected(p.id);
+                          setTab("Главная");
                         }}
                       >
-                        Удалить питомца
+                        <img src={p.photo || "./images/dog-2.jpg"} alt="" />
+                        <span>{p.name}</span>
+                        <span>›</span>
                       </button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="secondary"
+                    className="add-pet"
+                    onClick={() => editPet()}
+                  >
+                    <Plus />
+                    Добавить питомца
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+          {(pets.length > 0 || tab !== "Главная") && nav}
+        </>
+      ) : (
+        <>
+          <header className="form-header">
+            <button
+              aria-label="Назад"
+              onClick={() =>
+                screen === "pet" && step === 2 ? setStep(1) : setScreen("home")
+              }
+            >
+              <Icon name="back" />
+            </button>
+            <h1>Основная информация</h1>
+          </header>
+          <form
+            id="details"
+            onSubmit={
+              screen === "pet" ? (step === 1 ? proceed : savePet) : saveEvent
+            }
+          >
+            <div className="form-scroll">
+              {screen === "pet" && step === 1 ? (
+                <>
+                  <label className="photo-picker">
+                    {draft.photo ? (
+                      <img src={draft.photo} alt="Фото питомца" />
+                    ) : (
+                      <Icon name="camera" />
                     )}
-                  </>
-                ) : screen === "pet" ? (
-                  <div className="schedule-list">
-                    {draft.schedules?.map((s, i) =>
-                      scheduleCard(
-                        s,
-                        (v) =>
-                          setDraft({
-                            ...draft,
-                            schedules: draft.schedules.map((a, j) =>
-                              j === i ? v : a,
-                            ),
-                          }),
-                        i,
-                      ),
-                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={uploadPhoto}
+                    />
+                    <span className="sr-only">Добавить фото</span>
+                  </label>
+                  <div className="pet-fields">
+                    {input("Имя питомца", "name")}
+                    <Surface className="select-card">
+                      {selectRow(
+                        "Тип",
+                        draft.type,
+                        (v) => setDraft({ ...draft, type: v }),
+                        ["Собака", "Кошка", "Другое"],
+                      )}
+                      {selectRow(
+                        "Пол",
+                        draft.sex,
+                        (v) => setDraft({ ...draft, sex: v }),
+                        ["Мужской", "Женский"],
+                      )}
+                    </Surface>
+                    {input("Порода", "breed")}
+                    <div className="split">
+                      {input("Возраст", "age")}
+                      {input("Вес", "weight", "number")}
+                    </div>
+                    {input("Номер чипа", "chip")}
                     {docs}
                   </div>
-                ) : (
-                  <div className="schedule-list">
-                    {scheduleCard(draft, setDraft)}
-                    {screen === "event-view" && (
-                      <button
-                        className="delete-pet"
-                        type="button"
-                        onClick={() => {
+                  {draft.id && (
+                    <button
+                      className="delete-pet"
+                      type="button"
+                      onClick={() => {
+                        if (confirm("Удалить питомца и его события?")) {
+                          if (
+                            !store(
+                              "pets",
+                              pets.filter((p) => p.id !== draft.id),
+                              setPets,
+                            )
+                          )
+                            return;
                           store(
                             "events",
-                            events.filter((e) => e.id !== draft.id),
+                            events.filter((e) => e.petId !== draft.id),
                             setEvents,
                           );
                           setScreen("home");
-                        }}
-                      >
-                        Удалить событие
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </form>
-            <div className="action">
-              <button
-                className="primary"
-                form="details"
-                disabled={
-                  screen === "pet" ? !draft.name?.trim() : !draft.title?.trim()
-                }
-                onClick={
-                  screen === "event-view"
-                    ? (e) => {
-                        e.preventDefault();
-                        if (
-                          store(
-                            "events",
-                            events.map((ev) =>
-                              ev.id === draft.id ? draft : ev,
-                            ),
-                            setEvents,
-                          )
-                        )
-                          setScreen("home");
-                      }
-                    : undefined
-                }
-              >
-                {screen === "pet" && step === 1 ? "Далее" : "Сохранить"}
-              </button>
+                        }
+                      }}
+                    >
+                      Удалить питомца
+                    </button>
+                  )}
+                </>
+              ) : screen === "pet" ? (
+                <div className="schedule-list">
+                  {draft.schedules?.map((s, i) =>
+                    scheduleCard(
+                      s,
+                      (v) =>
+                        setDraft({
+                          ...draft,
+                          schedules: draft.schedules.map((a, j) =>
+                            j === i ? v : a,
+                          ),
+                        }),
+                      i,
+                    ),
+                  )}
+                  {docs}
+                </div>
+              ) : (
+                <div className="schedule-list">
+                  {scheduleCard(draft, setDraft)}
+                  {screen === "event-view" && (
+                    <button
+                      className="delete-pet"
+                      type="button"
+                      onClick={() => {
+                        store(
+                          "events",
+                          events.filter((e) => e.id !== draft.id),
+                          setEvents,
+                        );
+                        setScreen("home");
+                      }}
+                    >
+                      Удалить событие
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          </>
-        )}
-        {message && (
-          <div role="status" className="toast">
-            {message}
+          </form>
+          <div className="action">
+            <Button
+              form="details"
+
+              onClick={
+                screen === "event-view"
+                  ? (e) => {
+                      e.preventDefault();
+                      if (
+                        store(
+                          "events",
+                          events.map((ev) => (ev.id === draft.id ? draft : ev)),
+                          setEvents,
+                        )
+                      )
+                        setScreen("home");
+                    }
+                  : undefined
+              }
+            >
+              {screen === "pet" && step === 1 ? "Далее" : "Сохранить"}
+            </Button>
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+      {message && (
+        <div role="status" className="toast">
+          {message}
+        </div>
+      )}
+    </ScreenFrame>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  new URLSearchParams(location.search).get("view") === "design-system" ? (
+    <DesignSystem />
+  ) : (
+    <App />
+  ),
+);

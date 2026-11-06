@@ -1,0 +1,82 @@
+{
+  "display": {
+    "source": "2047:3633",
+    "family": "Manrope",
+    "size": 32,
+    "weight": 700,
+    "lineHeight": 44,
+    "tracking": 0
+  },
+  "heading": {
+    "source": "2043:4800",
+    "family": "Manrope",
+    "size": 24,
+    "weight": 600,
+    "lineHeight": 33,
+    "tracking": 0
+  },
+  "greeting": {
+    "source": "2068:4300",
+    "family": "Manrope",
+    "size": 16,
+    "weight": 600,
+    "lineHeight": 22,
+    "tracking": -0.43
+  },
+  "title": {
+    "source": "2184:1337",
+    "family": "Manrope",
+    "size": 20,
+    "weight": 500,
+    "lineHeight": 27,
+    "tracking": -0.45
+  },
+  "input": {
+    "source": "2031:2668",
+    "family": "Manrope",
+    "size": 18,
+    "weight": 400,
+    "lineHeight": 25,
+    "tracking": -0.45
+  },
+  "body": {
+    "source": "2063:3671",
+    "family": "Manrope",
+    "size": 16,
+    "weight": 400,
+    "lineHeight": 22,
+    "tracking": -0.43
+  },
+  "value": {
+    "source": "2031:2741",
+    "family": "Manrope",
+    "size": 16,
+    "weight": 500,
+    "lineHeight": 22,
+    "tracking": -0.45
+  },
+  "caption": {
+    "source": "2051:4253",
+    "family": "Manrope",
+    "size": 12,
+    "weight": 500,
+    "lineHeight": 16,
+    "tracking": 0
+  },
+  "action": {
+    "source": "2025:2712",
+    "family": "Manrope",
+    "size": 20,
+    "weight": 500,
+    "lineHeight": 27,
+    "tracking": -0.45
+  },
+  "event-time": {
+    "source": "2063:3673",
+    "family": "Manrope",
+    "size": 24,
+    "weight": 600,
+    "lineHeight": 33,
+    "tracking": 0
+  }
+}

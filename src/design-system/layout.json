@@ -1,0 +1,11 @@
+{
+  "screen": {"width":402,"height":874,"radius":40,"statusHeight":62},
+  "header": {"top":62,"mainHeight":64,"formHeight":60},
+  "empty": {"left":77,"top":334,"width":248},
+  "action": {"top":786,"height":88,"inset":32},
+  "form": {"top":122,"scrollHeight":664,"photoTop":138,"nameTop":226,"selectTop":290,"breedTop":410,"ageTop":474,"chipTop":538,"documentsTop":602},
+  "hero": {"height":480,"infoTop":289,"infoLeft":12,"infoWidth":378,"statusTop":367},
+  "events": {"firstTop":510,"firstHeight":123,"nextTop":641,"nextHeight":432},
+  "nav": {"top":770,"height":104,"surfaceLeft":24,"surfaceTop":16,"surfaceWidth":354,"surfaceHeight":64,"addLeft":177,"addTop":0,"menuLeft":16,"menuTop":651},
+  "schedule": {"firstTop":138,"height":280,"gap":8,"secondTop":426,"thirdTop":714}
+}
