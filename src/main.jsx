@@ -215,7 +215,7 @@ function App() {
         <div className="doc-card">
           {draft.docs.map((d, i) => (
             <div className="doc-row" key={i}>
-              <span className="pdf-icon">PDF</span>
+              <Icon name="pdf" className="pdf-original" />
               <a download={d.name} href={d.url}>
                 <span>{d.name}</span>
                 <small>
